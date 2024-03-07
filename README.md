@@ -9,9 +9,8 @@ The Invoke team is excited to partner with NVIDIA in order to release the Invoke
 
 ## Features
 
-- Easy installation of NVIDIA AI Workbench projects.
-- Simplified project management and environment setup.
-- Customizable to fit various project needs.
+- Easy installation of cutting-edge AI image generation tools, Invoke and Invoke Training, using NVIDIA AI Workbench projects.
+- Simplified project management and environment setup for working between systems
 
 ## Prerequisites
 
