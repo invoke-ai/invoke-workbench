@@ -1,0 +1,143 @@
+specVersion: v2
+meta:
+  name: invoke-ai
+  image: project-invoke-ai
+  description: A project to run Invoke AI
+  labels: []
+  createdOn: "2024-01-22T15:18:29Z"
+  defaultBranch: main
+layout:
+- path: code/
+  type: code
+  storage: git
+- path: models/
+  type: models
+  storage: gitlfs
+- path: data/
+  type: data
+  storage: gitlfs
+- path: data/scratch/
+  type: data
+  storage: gitignore
+environment:
+  base:
+    registry: nvcr.io
+    image: nvidia/cuda:12.1.1-runtime-ubuntu22.04
+    build_timestamp: "20231114175838"
+    name: CUDA 12.1
+    supported_architectures: []
+    cuda_version: "12.1"
+    description: NGC CUDA 12.1 container
+    entrypoint_script: ""
+    labels:
+    - ubuntu
+    - python3
+    - jupyterlab
+    apps: []
+    programming_languages:
+    - python3
+    icon_url: ""
+    image_version: 1.0.0
+    os: linux
+    os_distro: ubuntu
+    os_distro_release: "22.04"
+    schema_version: v2
+    user_info:
+      uid: ""
+      gid: ""
+      username: ""
+    package_managers:
+    - name: apt
+      binary_path: /usr/bin/apt
+      installed_packages: []
+    - name: pip
+      binary_path: /usr/local/bin/pip
+      installed_packages: []
+    package_manager_environment:
+      name: ""
+      target: ""
+execution:
+  apps:
+  - name: Setup Invoke
+    type: custom
+    class: process
+    start_command: /bin/bash /project/init.sh
+    health_check_command: pgrep -f "^/bin/bash /project/init.sh" >/dev/null
+    stop_command: pkill -f "^/bin/bash /project/init.sh"
+    user_msg: ""
+    icon_url: ""
+    process_options:
+      wait_until_finished: true
+  - name: jupyterlab
+    type: jupyterlab
+    class: webapp
+    start_command: jupyter lab --allow-root --port 8888 --ip 0.0.0.0 --no-browser
+      --NotebookApp.base_url=\$PROXY_PREFIX --NotebookApp.default_url=/lab
+    health_check_command: '[ \$(echo url=\$(jupyter lab list 2>&1 | head -n 2 | tail
+      -n 1 | cut -f1 -d'''' '''' | grep -v ''''Currently'''' | sed ''''s@/?@/lab?@g'''')
+      | curl -o /dev/null -s -w ''''%{http_code}'''' --config -) == ''''200'''' ]'
+    stop_command: jupyter lab stop 8888
+    user_msg: ""
+    icon_url: ""
+    webapp_options:
+      autolaunch: true
+      port: "8888"
+      proxy:
+        trim_prefix: false
+      url_command: jupyter lab list 2>&1 | head -n 2 | tail -n 1 | cut -f1 -d' ' |
+        grep -v 'Currently'
+  - name: Invoke
+    type: custom
+    class: webapp
+    start_command: invokeai-web --host 0.0.0.0
+    health_check_command: curl -f "http://localhost:9090/"
+    stop_command: pkill -f "^/usr/bin/python3 /home/workbench/.local/bin/invokeai-web"
+    user_msg: ""
+    icon_url: ""
+    webapp_options:
+      autolaunch: true
+      port: "9090"
+      proxy:
+        trim_prefix: true
+      url: http://localhost:9090/
+  - name: tensorboard
+    type: custom
+    class: webapp
+    start_command: tensorboard --logdir \$INVOKE_TRAINING_OUTPUT_DIR --path_prefix=\$PROXY_PREFIX
+      --bind_all
+    health_check_command: '[ \$(curl -o /dev/null -s -w ''%{http_code}'' http://localhost:6006\$PROXY_PREFIX/)
+      == ''200'' ]'
+    stop_command: ""
+    user_msg: ""
+    icon_url: ""
+    webapp_options:
+      autolaunch: true
+      port: "6006"
+      proxy:
+        trim_prefix: false
+      url: http://localhost:6006
+  resources:
+    gpu:
+      requested: 1
+    sharedMemoryMB: 1024
+  secrets:
+  - variable: HUGGING_FACE_HUB_TOKEN
+    description: Hugging Face API Token for private model access. Set to empty string
+      if not needed.
+  mounts:
+  - type: project
+    target: /project/
+    description: Project directory
+    options: rw
+  - type: volume
+    target: /home/workbench/invoke-training/output/
+    description: Output directory from invoke-training
+    options: ""
+  - type: volume
+    target: /mnt/huggingface/
+    description: Hugging face hub cache directory
+    options: ""
+  - type: volume
+    target: /mnt/invoke/
+    description: Invoke AI Root Directory
+    options: ""
