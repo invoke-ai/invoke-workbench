@@ -2,6 +2,7 @@
 
 
 # Invoke - NVIDIA AI Workbench Project
+*Current Invoke Version - 3.7.0*
 
 ## Introduction
 
