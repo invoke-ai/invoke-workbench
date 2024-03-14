@@ -1,0 +1,5 @@
+# python packages to install, one per line
+--extra-index-url https://download.pytorch.org/whl/cu121
+InvokeAI[xformers]>=3.7.0
+
+jupyterlab==4.0.11
